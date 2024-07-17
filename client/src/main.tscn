@@ -1,0 +1,187 @@
+[gd_scene load_steps=7 format=3 uid="uid://cncalldoxfcwu"]
+
+[ext_resource type="Script" path="res://src/main.gd" id="1_6x2cx"]
+[ext_resource type="Script" path="res://src/Canvas/camera.gd" id="2_7p5kw"]
+[ext_resource type="Script" path="res://src/Canvas/canvas.gd" id="2_aatfy"]
+[ext_resource type="Script" path="res://src/Canvas/mask.gd" id="4_4iww6"]
+[ext_resource type="Script" path="res://src/Canvas/brush.gd" id="5_31id1"]
+[ext_resource type="Script" path="res://src/Canvas/aim.gd" id="6_shtih"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_6x2cx")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="URL" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "http://127.0.0.1:5000"
+placeholder_text = "URL"
+
+[node name="Path" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "/home/xande/Works/Horobi_No_Kuni_No_Seifuku/raw.zip"
+placeholder_text = "Path"
+
+[node name="Ok" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Ok
+"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Size"
+
+[node name="PixelSize" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+min_value = 3.0
+value = 10.0
+
+[node name="Label2" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Opacity"
+
+[node name="Opacity" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.1
+value = 0.5
+
+[node name="Black" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Black"
+
+[node name="Polygon" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Polygon"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="Pages" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer"]
+layout_mode = 2
+text = "0/0"
+
+[node name="Redraw" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer"]
+layout_mode = 2
+text = "Redraw"
+
+[node name="Save" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer"]
+layout_mode = 2
+text = "Save"
+
+[node name="Back" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer"]
+layout_mode = 2
+text = "<
+"
+
+[node name="Foward" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer"]
+layout_mode = 2
+text = ">"
+
+[node name="Control" type="Control" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Canvas" type="SubViewportContainer" parent="MarginContainer/VBoxContainer/Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+script = ExtResource("2_aatfy")
+
+[node name="SubViewport" type="SubViewport" parent="MarginContainer/VBoxContainer/Control/Canvas"]
+handle_input_locally = false
+size = Vector2i(1132, 558)
+render_target_update_mode = 4
+
+[node name="Camera2D" type="Camera2D" parent="MarginContainer/VBoxContainer/Control/Canvas/SubViewport"]
+position = Vector2(10, 80)
+script = ExtResource("2_7p5kw")
+
+[node name="BottomCanvas" type="SubViewportContainer" parent="MarginContainer/VBoxContainer/Control/Canvas/SubViewport"]
+offset_left = 10.0
+offset_top = 80.0
+offset_right = 50.0
+offset_bottom = 120.0
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas"]
+handle_input_locally = false
+size = Vector2i(40, 40)
+render_target_update_mode = 4
+
+[node name="Raw" type="TextureRect" parent="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport"]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Mask" type="TextureRect" parent="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport"]
+modulate = Color(1, 1, 1, 0.458824)
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("4_4iww6")
+
+[node name="Brush" type="Control" parent="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/Mask"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_31id1")
+
+[node name="Aim" type="Control" parent="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/Mask/Brush"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_shtih")
+
+[node name="HTTPRequest" type="HTTPRequest" parent="."]
+
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Ok" to="." method="_on_ok_pressed"]
+[connection signal="value_changed" from="MarginContainer/VBoxContainer/HBoxContainer2/PixelSize" to="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/Mask/Brush" method="_on_pixel_size_value_changed"]
+[connection signal="value_changed" from="MarginContainer/VBoxContainer/HBoxContainer2/Opacity" to="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/Mask" method="_on_opacity_value_changed"]
+[connection signal="toggled" from="MarginContainer/VBoxContainer/HBoxContainer2/Black" to="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/Mask/Brush" method="_on_black_toggled"]
+[connection signal="toggled" from="MarginContainer/VBoxContainer/HBoxContainer2/Polygon" to="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/Mask/Brush" method="_on_polygon_toggled"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer/Redraw" to="." method="_on_redraw_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer/Save" to="." method="_on_save_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer/Back" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer/Foward" to="." method="_on_foward_pressed"]
+[connection signal="gui_input" from="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/Mask/Brush/Aim" to="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/Mask/Brush/Aim" method="_on_gui_input"]
