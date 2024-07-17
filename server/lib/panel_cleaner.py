@@ -4,7 +4,7 @@ import subprocess
 import shutil
 
 class PanelCleaner:
-	def process_files():
+	def process_files(socketio):
 		for root, dirs, files in os.walk(os.path.abspath('cleaner/raw')):
 			for _dir in dirs:
 				input_path = os.path.join(root, _dir)
@@ -17,9 +17,9 @@ class PanelCleaner:
 
 		Image.transform_images_recursively('cleaner/mask')
 		shutil.make_archive("mask", "zip", "cleaner/mask")
+		socketio.emit('download_mask', {})
 
 def has_images(directory):
-    # Verifica se há imagens PNG ou JPG no diretório (não recursivo)
     for file in os.listdir(directory):
         if file.lower().endswith(('.png', '.jpg', '.jpeg')):
             return True

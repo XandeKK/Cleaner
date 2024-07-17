@@ -4,7 +4,7 @@ import shutil
 from PIL import Image
 
 class Iopaint:
-	def inpainting():
+	def inpainting(socketio):
 		for root, dirs, files in os.walk('cleaner/raw'):
 			for _dir in dirs:
 				input_path = os.path.join(root, _dir)
@@ -15,13 +15,14 @@ class Iopaint:
 
 				if has_images(input_path):
 					print(f'inpaiting: {input_path}, output: {output_path}')
-					process = subprocess.Popen(f'iopaint run --device cpu --image {input_path} --mask {mask_path} --output {output_path}'.split())
+					process = subprocess.Popen(f'iopaint run --device cuda --image {input_path} --mask {mask_path} --output {output_path}'.split())
 					process.wait()
 		
 		convert_png_to_jpg('cleaner/output')
 		if os.path.exists('result.zip'):
 			os.remove('result.zip')
 		shutil.make_archive("result", "zip", "cleaner/output")
+		socketio.emit('download_cleaned', {})
 
 
 def convert_png_to_jpg(directory):

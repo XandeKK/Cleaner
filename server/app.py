@@ -1,14 +1,17 @@
 import os
 from flask import Flask, request, jsonify, send_file
+from flask_socketio import SocketIO, emit
 from werkzeug.utils import secure_filename
 import zipfile
 import shutil
 from lib.panel_cleaner import PanelCleaner
 from lib.iopaint import Iopaint
+import threading
 
 UPLOAD_FOLDER = '.'
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route("/images", methods=['POST'])
@@ -33,7 +36,8 @@ def upload_file():
         with zipfile.ZipFile(filename, 'r') as zip_ref:
             zip_ref.extractall('cleaner/raw')
 
-        PanelCleaner.process_files()
+        t = threading.Thread(target=PanelCleaner.process_files, args=(socketio,))
+        t.start()
 
         return jsonify({"code": 200, "msg": "Upload Success"})
     return jsonify({"code": 401, "msg": "Upload file formating error."})
@@ -54,9 +58,9 @@ def redraw():
         with zipfile.ZipFile(filename, 'r') as zip_ref:
             zip_ref.extractall('cleaner/mask')
 
-        Iopaint.inpainting()
+        t = threading.Thread(target=Iopaint.inpainting, args=(socketio,))
+        t.start()
 
-        return send_file('result.zip')
         return jsonify({"code": 200, "msg": "Upload Success"})
     return jsonify({"code": 401, "msg": "Upload file formating error."})
 
@@ -74,4 +78,4 @@ def get_file():
         return "Path is None", 400
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", 5000, False)
+    socketio.run(app)
