@@ -18,7 +18,7 @@ func open() -> void:
 	
 	load_image_in_canvas()
 	emit_signal('page_changed', str(current_page + 1) + "/" + str(raw_images_path.size()))
-
+	
 func load_image_in_canvas() -> void:
 	canvas.load_mask_image(load_image(mask_images_path[current_page]))
 	canvas.load_raw_image(load_image(raw_images_path[current_page]))

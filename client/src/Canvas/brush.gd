@@ -1,62 +1,108 @@
 extends Control
-class_name Brush
+class_name Mask
 
-@onready var texture_rect : TextureRect = get_parent()
+var history_redo : Array
+var history_undo : Array
 
-var polygon_mode : bool = false
-var polygon_points : Array = []
+var image_texture : ImageTexture : set = set_image_texture
 var pixel_size : int = 10
 var white : bool = true
 var last_mouse_position : Vector2 = Vector2(-1, -1)
 var is_drawing : bool = false
-var pending_updates : bool = false
+var pos : Vector2 = Vector2.ZERO
+var can_draw_texture : bool = false
+var bucket : bool = false
+var line : bool = false
+
+var line_start : Vector2 = Vector2()
+var line_end : Vector2 = Vector2()
+var drawing_line : bool = false
+var can_draw_line : bool = false
 
 func _draw():
-	if polygon_points.size() >= 3:
-		draw_colored_polygon(polygon_points, Color(Color.RED, 0.3))
+	if can_draw_texture:
+		draw_texture(image_texture, Vector2.ZERO)
+		can_draw_texture = false
+	
+	if can_draw_line:
+		draw_line(line_start, line_end, Color.WHITE if white else Color.BLACK, pixel_size, true)
+		can_draw_line = false
+	
+	if not is_drawing or pos == last_mouse_position:
+		return
+
+	if last_mouse_position != Vector2(-1, -1):
+		var distSqr = last_mouse_position.distance_squared_to(pos)
+		if distanceTooBig(distSqr):
+			putBrushDot(pos)
+			draw_interpolated(distSqr)
+		else:
+			putBrushDot(pos)
+		last_mouse_position = pos
+	else:
+		last_mouse_position = pos
+		putBrushDot(pos)
+
+func distanceTooBig(dist2):
+	return dist2 > max_dist_btwn_dots() * max_dist_btwn_dots()
+
+func draw_interpolated(distSqr):
+	var dirVector : Vector2 = last_mouse_position.direction_to(pos)
+	dirVector = dirVector * max_dist_btwn_dots()
+	var interpVector = Vector2(dirVector)
+	while interpVector.length_squared() < distSqr:
+		putBrushDot(last_mouse_position + interpVector)
+		interpVector += dirVector
+
+func max_dist_btwn_dots():
+	return pixel_size / 3.0
+
+func putBrushDot(pos):
+	draw_circle(pos, pixel_size, Color.WHITE if white else Color.BLACK)
+
+func _process(delta):
+	pos = get_local_mouse_position()
+	if is_drawing or can_draw_line:
+		queue_redraw()
 
 func _input(event):
-	if polygon_mode:
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				add_polygon()
-				queue_redraw()
-		elif event.is_action_pressed("ui_accept"):
-			end_polygon()
-			queue_redraw()
-		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
-			is_drawing =  true
+			if bucket:
+				bucket_fill(event.position, Color.WHITE if white else Color.BLACK)
+			elif line:
+				line_start = event.position
+				drawing_line = true
+			else:
+				is_drawing =  true
+			history_undo.append(get_parent().get_texture().get_image())
+			history_redo.clear()
 		else:
-			is_drawing =  false
-			last_mouse_position = Vector2(-1,-1)
-	if event is InputEventMouseMotion and is_drawing:
-		var mouse_position : Vector2 = get_local_mouse_position()
-		
-		if last_mouse_position.x >= 0 and last_mouse_position.y >= 0:
-			var distance = mouse_position.distance_to(last_mouse_position)
-			var steps = int(distance)
-			
-			for i in range(steps):
-				var interpolated_position = last_mouse_position.lerp(mouse_position, float(i) / steps)
-				_draw_circle(interpolated_position)
+			if drawing_line:
+				line_end = event.position
+				can_draw_line = true
+				drawing_line = false
+			else:
+				is_drawing =  false
+				last_mouse_position = Vector2(-1, -1)
 
-		last_mouse_position = mouse_position
+func redo() -> void:
+	if history_redo.is_empty():
+		Notification.message("Can't use redo")
+		return
+	
+	var img : Image = history_redo.pop_back()
+	history_undo.append(get_parent().get_texture().get_image())
+	set_image_texture(ImageTexture.create_from_image(img))
 
-		_draw_circle(mouse_position)
-		pending_updates = true
-
-func _process(_delta):
-	if pending_updates:
-		texture_rect.texture.update(texture_rect.image)
-		
-		pending_updates = false
-
-func _draw_circle(center: Vector2):
-	var top_left = center - Vector2(pixel_size, pixel_size)
-	var rect_size = Vector2(2 * pixel_size + 1, 2 * pixel_size + 1)
-	texture_rect.image.fill_rect(Rect2(top_left, rect_size), Color.WHITE if white else Color.BLACK)
+func undo() -> void:
+	if history_undo.is_empty():
+		Notification.message("Can't use undo")
+		return
+	
+	var img : Image = history_undo.pop_back()
+	history_redo.append(get_parent().get_texture().get_image())
+	set_image_texture(ImageTexture.create_from_image(img))
 
 func _on_black_toggled(toggled_on):
 	white = not toggled_on
@@ -64,54 +110,69 @@ func _on_black_toggled(toggled_on):
 func _on_pixel_size_value_changed(value : float):
 	pixel_size = value
 
-func add_polygon():
-	last_mouse_position = get_local_mouse_position()
-	polygon_points.append(last_mouse_position)
+func set_image_texture(value : ImageTexture) -> void:
+	image_texture = value
+	can_draw_texture = true
+	queue_redraw()
 
-func end_polygon():
-	draw_filled_polygon(polygon_points, Color.WHITE if white else Color.BLACK)
-	polygon_points.clear()
+func bucket_fill(position: Vector2, color: Color) -> void:
+	var img : Image = get_parent().get_texture().get_image()
 
-func draw_filled_polygon(points: Array, color: Color):
-	var min_x = points[0].x
-	var max_x = points[0].x
-	var min_y = points[0].y
-	var max_y = points[0].y
+	var target_color : Color = img.get_pixelv(position)
+	if target_color == color:
+		return
 	
-	for p in points:
-		if p.x < min_x: min_x = p.x
-		if p.x > max_x: max_x = p.x
-		if p.y < min_y: min_y = p.y
-		if p.y > max_y: max_y = p.y
+	flood_fill(img, position, target_color, color)
 	
-	for y in range(min_y, max_y + 1):
-		var intersections = []
-		
-		for i in range(points.size()):
-			var j = (i + 1) % points.size()
-			
-			var p1 = points[i]
-			var p2 = points[j]
-			
-			if p1.y == p2.y:
-				continue
-			
-			if y >= min(p1.y, p2.y) and y <= max(p1.y, p2.y):
-				var x_inter = int(p1.x + (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y))
-				intersections.append(x_inter)
-		
-		intersections.sort()
-		
-		for i in range(0, intersections.size() - 1, 2):
-			var start_x = max(min_x, intersections[i])
-			var end_x = min(max_x, intersections[i + 1])
-			
-			for x in range(start_x, end_x + 1):
-				texture_rect.image.set_pixel(x, y, color)
-	
-	pending_updates = true
+	set_image_texture(ImageTexture.create_from_image(img))
 
-func _on_polygon_toggled(toggled_on):
-	polygon_mode = toggled_on
-	if not polygon_mode:
-		polygon_points.clear()
+func flood_fill(image: Image, position: Vector2, target_color: Color, fill_color: Color) -> void:
+	var width = image.get_width()
+	var height = image.get_height()
+
+	var stack = [position]
+	while stack.size() > 0:
+		var point = stack.pop_back()
+		var x = int(point.x)
+		var y = int(point.y)
+
+		if x < 0 or x >= width or y < 0 or y >= height:
+			continue
+
+		if image.get_pixel(x, y) == target_color:
+			image.set_pixel(x, y, fill_color)
+			stack.append(Vector2(x + 1, y))
+			stack.append(Vector2(x - 1, y))
+			stack.append(Vector2(x, y + 1))
+			stack.append(Vector2(x, y - 1))
+
+func _on_bucket_toggled(toggled_on):
+	bucket = toggled_on
+
+func _on_line_toggled(toggled_on):
+	line = toggled_on
+
+func _draw_line(start: Vector2, end: Vector2, color: Color) -> void:
+	var img : Image = get_parent().get_texture().get_image()
+	
+	var dx = abs(end.x - start.x)
+	var dy = abs(end.y - start.y)
+	var sx = 1 if start.x < end.x else -1
+	var sy = 1 if start.y < end.y else -1
+	var err = dx - dy
+
+	while true:
+		img.set_pixelv(start, color)
+
+		if start == end:
+			break
+
+		var e2 = 2 * err
+		if e2 > -dy:
+			err -= dy
+			start.x += sx
+		if e2 < dx:
+			err += dx
+			start.y += sy
+
+	set_image_texture(ImageTexture.create_from_image(img))

@@ -1,8 +1,13 @@
 extends Control
 
-@onready var mask : Mask = $MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/Mask
+@onready var black_check : CheckButton = $MarginContainer/VBoxContainer/HBoxContainer2/Black
+@onready var bucket_check : CheckButton = $MarginContainer/VBoxContainer/HBoxContainer2/Bucket
+@onready var sub_viewport_mask : SubViewport = $MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/SubViewportContainer/SubViewport
+@onready var mask : Mask = $MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/SubViewportContainer/SubViewport/Mask
 
 func _ready():
+	Notification.notification_body = $NotificationBody
+	
 	Client.download_finished.connect(_on_download_finshed)
 	FileHandler.canvas = $MarginContainer/VBoxContainer/Control/Canvas
 	
@@ -11,14 +16,25 @@ func _ready():
 func _input(event):
 	if event.is_action_pressed("ui_save"):
 		_on_save_pressed()
-	elif event.is_action_pressed('ui_left'):
+	if event.is_action_pressed('ui_left'):
 		FileHandler.back()
-	elif event.is_action_pressed('ui_right'):
+	if event.is_action_pressed('ui_right'):
 		FileHandler.foward()
+	if event.is_action_pressed('ui_redo'):
+		mask.redo()
+	if event.is_action_pressed('ui_undo'):
+		mask.undo()
+	if event.is_action_pressed('change_color'):
+		black_check.button_pressed = not black_check.button_pressed
+	if event.is_action_pressed('bucket'):
+		bucket_check.button_pressed = not bucket_check.button_pressed
+	#if event.is_action_pressed(''):
+		#pass
 
 func _on_download_finshed() -> void:
 	OS.execute('unzip', ['/tmp/cleaner/mask.zip', '-d', '/tmp/cleaner/mask'])
 	FileHandler.open()
+	Notification.message("Download finished mask.zip")
 
 func _on_ok_pressed():
 	Client.url = $MarginContainer/VBoxContainer/HBoxContainer/URL.text
@@ -51,5 +67,10 @@ func _on_page_changed(text) -> void:
 	$MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer/Pages.text = text
 
 func _on_save_pressed():
-	var img : Image = mask.texture.get_image()
+	if FileHandler.mask_images_path.is_empty():
+		Notification.message("Você está na área de teste")
+		return
+	await RenderingServer.frame_post_draw
+	var img : Image = sub_viewport_mask.get_texture().get_image()
 	img.save_jpg(FileHandler.mask_images_path[FileHandler.current_page])
+	Notification.message("Mask saved")
