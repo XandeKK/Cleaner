@@ -12,7 +12,7 @@ class PanelCleaner:
 
 				if has_images(input_path):
 					print(f'clean: {input_path}, output: {output_path}')
-					process = subprocess.Popen(f'pcleaner-cli clean {input_path} -m --output_dir={output_path}'.split())
+					process = subprocess.Popen(f'pcleaner-cli clean {input_path} -m --output_dir={output_path}'.split(), stdout=subprocess.PIPE)
 					process.wait()
 
 		Image.transform_images_recursively('cleaner/mask')
