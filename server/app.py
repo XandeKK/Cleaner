@@ -22,7 +22,7 @@ def handle_panel_cleaner(data):
     os.makedirs('cleaner/raw')
     os.makedirs('cleaner/mask')
 
-    with zipfile.ZipFile(os.path.join('/content/drive/MyDrive', data.filename), 'r') as zip_ref:
+    with zipfile.ZipFile('/content/drive/MyDrive/raw.zip', 'r') as zip_ref:
         zip_ref.extractall('cleaner/raw')
 
     t = threading.Thread(target=PanelCleaner.process_files, args=(socketio,))
