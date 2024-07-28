@@ -48,13 +48,12 @@ func _on_ok_pressed():
 	DirAccess.make_dir_absolute('/tmp/cleaner/mask')
 	
 	OS.execute('unzip', [Client.path, '-d', '/tmp/cleaner/raw'])
-	Client.send_images()
+	Client.panel_cleaner()
 
 func _on_redraw_pressed():
 	if FileAccess.file_exists('/tmp/cleaner/mask.zip'):
 		DirAccess.remove_absolute('/tmp/cleaner/mask.zip')
 	
-	OS.execute('/home/xande/Languages/Godot/Cleaner/zip.sh', [])
 	Client.redraw()
 
 func _on_back_pressed():

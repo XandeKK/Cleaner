@@ -28,9 +28,8 @@ func load_image(path : String) -> ImageTexture:
 	var texture = ImageTexture.new()
 
 	image.load(path)
-	texture.set_image(image)
 
-	return texture
+	return ImageTexture.create_from_image(image)
 
 func foward() -> void:
 	if current_page == raw_images_path.size() - 1 or raw_images_path.size() == 0:

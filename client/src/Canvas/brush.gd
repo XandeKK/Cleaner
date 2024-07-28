@@ -113,6 +113,7 @@ func _on_pixel_size_value_changed(value : float):
 func set_image_texture(value : ImageTexture) -> void:
 	image_texture = value
 	can_draw_texture = true
+	get_parent().render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
 	queue_redraw()
 
 func bucket_fill(position: Vector2, color: Color) -> void:

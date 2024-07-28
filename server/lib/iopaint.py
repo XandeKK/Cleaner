@@ -22,6 +22,7 @@ class Iopaint:
 		if os.path.exists('result.zip'):
 			os.remove('result.zip')
 		shutil.make_archive("result", "zip", "cleaner/output")
+		shutil.move('result.zip', '/content/drive/MyDrive/result.zip')
 		socketio.emit('download_cleaned', {})
 
 

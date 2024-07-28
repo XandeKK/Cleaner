@@ -43,6 +43,8 @@ placeholder_text = "URL"
 [node name="Path" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+tooltip_text = "é um zip
+Dentro do zip, pode ter vários capítulos, porém dentro desse capítulo/diretório, tem que ter o diretório raw"
 text = "/home/xande/Works/Horobi_No_Kuni_No_Seifuku/raw.zip"
 placeholder_text = "Path"
 

@@ -17,6 +17,7 @@ class PanelCleaner:
 
 		Image.transform_images_recursively('cleaner/mask')
 		shutil.make_archive("mask", "zip", "cleaner/mask")
+		shutil.move('mask.zip', '/content/drive/MyDrive/mask.zip')
 		socketio.emit('download_mask', {})
 
 def has_images(directory):

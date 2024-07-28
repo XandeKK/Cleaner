@@ -10,6 +10,8 @@ extends SubViewportContainer
 
 func _ready():
 	var img : Image = Image.create(800, 1000, true, Image.FORMAT_RGBA8)
+	load_raw_image(ImageTexture.create_from_image(img))
+	
 	img.fill(Color.BLACK)
 	var img_tex : ImageTexture = ImageTexture.create_from_image(img)
 	load_mask_image(img_tex)
