@@ -20,7 +20,7 @@ class Iopaint:
 						output = process.stdout.readline().decode()
 						if output == '' and process.poll() is not None:
 							break
-						self.socketio.emit('log', {'message': output})
+						socketio.emit('log', {'message': output})
 					# process.wait()
 		
 		convert_png_to_jpg('cleaner/output')

@@ -93,5 +93,5 @@ func on_socket_event(event_name: String, _payload: Variant, _name_space):
 		
 		Notification.message("result.zip downloaded")
 		_log.text += '\nresult.zip downloaded'
-	elif event_name == 'message':
+	elif event_name == 'log':
 		_log.text += '\n' + _payload.message

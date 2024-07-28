@@ -17,7 +17,7 @@ class PanelCleaner:
 						output = process.stdout.readline().decode()
 						if output == '' and process.poll() is not None:
 							break
-						self.socketio.emit('log', {'message': output})
+						socketio.emit('log', {'message': output})
 					# process.wait()
 
 		Image.transform_images_recursively('cleaner/mask')
