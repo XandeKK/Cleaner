@@ -16,7 +16,12 @@ class Iopaint:
 				if has_images(input_path):
 					print(f'inpaiting: {input_path}, output: {output_path}')
 					process = subprocess.Popen(f'iopaint run --device cuda --image {input_path} --mask {mask_path} --output {output_path}'.split(), stdout=subprocess.PIPE)
-					process.wait()
+					while True:
+						output = process.stdout.readline().decode()
+						if output == '' and process.poll() is not None:
+							break
+						self.socketio.emit('log', {'message': output})
+					# process.wait()
 		
 		convert_png_to_jpg('cleaner/output')
 		if os.path.exists('result.zip'):

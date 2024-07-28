@@ -8,6 +8,8 @@ var download_cleaned : bool = false
 
 var client : SocketIOClient
 var backendURL: String
+var _log : TextEdit
+var timer : Timer
 
 signal download_finished
 
@@ -15,7 +17,7 @@ func panel_cleaner() -> void:
 	if client:
 		client.socketio_disconnect()
 		client = null
-		
+	
 	client = SocketIOClient.new(url + "/socket.io", {"token": "MY_AUTH_TOKEN"})
 	
 	client.on_engine_connected.connect(on_socket_ready)
@@ -23,13 +25,14 @@ func panel_cleaner() -> void:
 	client.on_event.connect(on_socket_event)
 	
 	add_child(client)
+	# delete raw.zip in gdrive
 	OS.execute('/home/xande/Applications/gdrive', ['files', 'upload', path])
-	await get_tree().create_timer(10).timeout
-	client.socketio_send("panel_cleaner", {'filename': path.get_file()})
+	await get_tree().create_timer(50).timeout
+	client.socketio_send("panel_cleaner", {})
 
 func redraw() -> void:
 	OS.execute('/home/xande/Languages/multi/cleaner/client/zip.sh', [])
-	await get_tree().create_timer(10).timeout
+	await get_tree().create_timer(50).timeout
 	client.socketio_send("redraw")
 
 func get_images_zip_id(data: String, filename : String) -> String:
@@ -57,26 +60,30 @@ func on_socket_ready(_sid: String):
 
 func on_socket_connect(_payload: Variant, _name_space, error: bool):
 	if error:
-		push_error("Failed to connect to backend!")
+		_log.text += '\nFailed to connect to backend!'
 	else:
-		print("Socket connected")
+		_log.text += '\nSocket connected'
+		timer.start(1)
 
 func on_socket_event(event_name: String, _payload: Variant, _name_space):
 	if event_name == 'download_mask':
 		Notification.message("Downloading mask.zip")
-		await get_tree().create_timer(10).timeout
+		_log.text += '\nDownloading mask.zip'
+		await get_tree().create_timer(50).timeout
 		
 		var output : Array = []
 		OS.execute('/home/xande/Applications/gdrive', ['files', 'list'], output)
 		var value : String = get_images_zip_id(output[0], 'mask')
 		
 		OS.execute('/home/xande/Applications/gdrive', ['files', 'download', value, '--destination', '/tmp/cleaner/'])
+		OS.execute('/home/xande/Applications/gdrive', ['files', 'delete', value])
 		
 		emit_signal('download_finished')
 	elif event_name == 'download_cleaned':
 		Notification.message("Downloading result.zip")
+		_log.text += '\nDownloading result.zip'
 		
-		await get_tree().create_timer(10).timeout
+		await get_tree().create_timer(50).timeout
 		
 		var output : Array = []
 		OS.execute('/home/xande/Applications/gdrive', ['files', 'list'], output)
@@ -85,6 +92,6 @@ func on_socket_event(event_name: String, _payload: Variant, _name_space):
 		OS.execute('/home/xande/Applications/gdrive', ['files', 'download', value, '--destination', path.get_base_dir()])
 		
 		Notification.message("result.zip downloaded")
+		_log.text += '\nresult.zip downloaded'
 	elif event_name == 'message':
-		var data : Dictionary = JSON.parse_string(_payload)
-		Notification.message(data.message)
+		_log.text += '\n' + _payload.message

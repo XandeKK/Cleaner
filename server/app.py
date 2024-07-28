@@ -27,7 +27,7 @@ def handle_panel_cleaner(data):
 
     t = threading.Thread(target=PanelCleaner.process_files, args=(socketio,))
     t.start()
-    socketio.emit('message', {'message': 'PanelCleaner started.'})
+    socketio.emit('log', {'message': 'PanelCleaner started.'})
 
 @socketio.on('redraw')
 def redraw():
@@ -36,7 +36,7 @@ def redraw():
 
     t = threading.Thread(target=Iopaint.inpainting, args=(socketio,))
     t.start()
-    socketio.emit('message', {'message': 'Redraw started.'})
+    socketio.emit('log', {'message': 'Redraw started.'})
 
 if __name__ == "__main__":
     socketio.run(app)

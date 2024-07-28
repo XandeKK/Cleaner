@@ -9,6 +9,8 @@ func _ready():
 	Notification.notification_body = $NotificationBody
 	
 	Client.download_finished.connect(_on_download_finshed)
+	Client._log = $MarginContainer/VBoxContainer/Control/Canvas/SubViewport/Log
+	Client.timer = $Timer
 	FileHandler.canvas = $MarginContainer/VBoxContainer/Control/Canvas
 	
 	FileHandler.page_changed.connect(_on_page_changed)
@@ -35,6 +37,7 @@ func _on_download_finshed() -> void:
 	OS.execute('unzip', ['/tmp/cleaner/mask.zip', '-d', '/tmp/cleaner/mask'])
 	FileHandler.open()
 	Notification.message("Download finished mask.zip")
+	Client._log.text += '\nDownload finished mask.zip'
 
 func _on_ok_pressed():
 	Client.url = $MarginContainer/VBoxContainer/HBoxContainer/URL.text
@@ -73,3 +76,6 @@ func _on_save_pressed():
 	var img : Image = sub_viewport_mask.get_texture().get_image()
 	img.save_jpg(FileHandler.mask_images_path[FileHandler.current_page])
 	Notification.message("Mask saved")
+
+func _on_timer_timeout():
+	Client.client.socketio_send("ping", {})
