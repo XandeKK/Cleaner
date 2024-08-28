@@ -216,6 +216,7 @@ mouse_filter = 2
 alignment = 2
 
 [node name="Timer" type="Timer" parent="."]
+wait_time = 10.0
 
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Ok" to="." method="_on_ok_pressed"]
 [connection signal="value_changed" from="MarginContainer/VBoxContainer/HBoxContainer2/PixelSize" to="MarginContainer/VBoxContainer/Control/Canvas/SubViewport/BottomCanvas/SubViewport/SubViewportContainer/SubViewport/Mask" method="_on_pixel_size_value_changed"]

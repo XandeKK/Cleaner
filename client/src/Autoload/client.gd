@@ -1,17 +1,19 @@
 extends Node
 
+var thread : Thread
+
 var url : String : set = set_url
 var path : String : set = set_path
 
-var download_mask : bool = false
-var download_cleaned : bool = false
-
 var client : SocketIOClient
 var backendURL: String
-var _log : TextEdit
+var logger : TextEdit
 var timer : Timer
 
 signal download_finished
+
+func _ready():
+	thread = Thread.new()
 
 func panel_cleaner() -> void:
 	if client:
@@ -26,14 +28,23 @@ func panel_cleaner() -> void:
 	
 	add_child(client)
 	# delete raw.zip in gdrive
-	OS.execute('/home/xande/Applications/gdrive', ['files', 'upload', path])
-	await get_tree().create_timer(50).timeout
-	client.socketio_send("panel_cleaner", {})
+	if thread.is_started():
+		thread.wait_to_finish()
+	
+	thread.start(upload_gdrive.bind(path, logger, func(): 
+		await get_tree().create_timer(50).timeout
+		client.socketio_send("panel_cleaner", {})
+	))
 
 func redraw() -> void:
 	OS.execute('/home/xande/Languages/multi/cleaner/client/zip.sh', [])
-	await get_tree().create_timer(50).timeout
-	client.socketio_send("redraw")
+	if thread.is_started():
+		thread.wait_to_finish()
+	
+	thread.start(upload_gdrive.bind('/tmp/cleaner/mask.zip', logger, func():
+		await get_tree().create_timer(50).timeout
+		client.socketio_send("redraw")
+	))
 
 func get_images_zip_id(data: String, filename : String) -> String:
 	var pattern = r"(\S+)\s+{filename}\.zip".format({'filename': filename})
@@ -53,45 +64,74 @@ func set_path(value : String) -> void:
 	path = value
 
 func _exit_tree():
-	client.socketio_disconnect()
+	client.socketio_disconnet()
+	thread.wait_to_finish()
 
 func on_socket_ready(_sid: String):
 	client.socketio_connect()
 
 func on_socket_connect(_payload: Variant, _name_space, error: bool):
 	if error:
-		_log.text += '\nFailed to connect to backend!'
+		logger.text += '\nFailed to connect to backend!'
+		logger.get_v_scroll_bar().value += 100
 	else:
-		_log.text += '\nSocket connected'
-		timer.start(1)
+		logger.text += '\nSocket connected'
+		logger.get_v_scroll_bar().value += 100
+		timer.start(40)
+
+func upload_gdrive(_path : String, _logger : TextEdit, callback : Callable) -> void:
+	var output : Array = []
+	OS.execute('/home/xande/Applications/gdrive', ['files', 'upload', _path], output)
+	_logger.set_deferred('text', _logger.text + '\n' + output[0])
+	callback.call_deferred()
+
+func download_gdrive(id : String, destination : String, _logger : TextEdit, callback : Callable) -> void:
+	var output : Array = []
+	OS.execute('/home/xande/Applications/gdrive', ['files', 'download', id, '--destination', destination], output)
+	_logger.set_deferred('text', _logger.text + '\n' + output[0])
+	callback.call_deferred()
 
 func on_socket_event(event_name: String, _payload: Variant, _name_space):
 	if event_name == 'download_mask':
 		Notification.message("Downloading mask.zip")
-		_log.text += '\nDownloading mask.zip'
-		await get_tree().create_timer(50).timeout
+		logger.text += '\nDownloading mask.zip'
+		logger.get_v_scroll_bar().value += 100
+		print('Downloading mask.zip')
+		await get_tree().create_timer(20).timeout
 		
 		var output : Array = []
 		OS.execute('/home/xande/Applications/gdrive', ['files', 'list'], output)
 		var value : String = get_images_zip_id(output[0], 'mask')
 		
-		OS.execute('/home/xande/Applications/gdrive', ['files', 'download', value, '--destination', '/tmp/cleaner/'])
-		OS.execute('/home/xande/Applications/gdrive', ['files', 'delete', value])
-		
-		emit_signal('download_finished')
+		if thread.is_started():
+			thread.wait_to_finish()
+		thread.start(download_gdrive.bind(value, '/tmp/cleaner/', logger, func(): 
+			OS.execute('/home/xande/Applications/gdrive', ['files', 'delete', value])
+			emit_signal('download_finished')
+		))
 	elif event_name == 'download_cleaned':
+		print("Downloading result.zip")
 		Notification.message("Downloading result.zip")
-		_log.text += '\nDownloading result.zip'
+		logger.text += '\nDownloading result.zip'
+		logger.get_v_scroll_bar().value += 100
 		
-		await get_tree().create_timer(50).timeout
+		await get_tree().create_timer(20).timeout
 		
 		var output : Array = []
 		OS.execute('/home/xande/Applications/gdrive', ['files', 'list'], output)
 		var value : String = get_images_zip_id(output[0], 'result')
 		
-		OS.execute('/home/xande/Applications/gdrive', ['files', 'download', value, '--destination', path.get_base_dir()])
+		if thread.is_started():
+			thread.wait_to_finish()
 		
-		Notification.message("result.zip downloaded")
-		_log.text += '\nresult.zip downloaded'
+		thread.start(download_gdrive.bind(value, path.get_base_dir(), logger, func(): 
+			Notification.message("result.zip downloaded")
+			logger.text += '\nresult.zip downloaded'
+			logger.get_v_scroll_bar().value += 100
+		))
+	
+	elif event_name == 'ping':
+		logger.text += 'ping'
+		logger.get_v_scroll_bar().value += 100
 	elif event_name == 'log':
-		_log.text += '\n' + _payload.message
+		pass

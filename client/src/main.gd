@@ -9,7 +9,7 @@ func _ready():
 	Notification.notification_body = $NotificationBody
 	
 	Client.download_finished.connect(_on_download_finshed)
-	Client._log = $MarginContainer/VBoxContainer/Control/Canvas/SubViewport/Log
+	Client.logger = $MarginContainer/VBoxContainer/Control/Canvas/SubViewport/Log
 	Client.timer = $Timer
 	FileHandler.canvas = $MarginContainer/VBoxContainer/Control/Canvas
 	
@@ -37,7 +37,7 @@ func _on_download_finshed() -> void:
 	OS.execute('unzip', ['/tmp/cleaner/mask.zip', '-d', '/tmp/cleaner/mask'])
 	FileHandler.open()
 	Notification.message("Download finished mask.zip")
-	Client._log.text += '\nDownload finished mask.zip'
+	Client.logger.text += '\nDownload finished mask.zip'
 
 func _on_ok_pressed():
 	Client.url = $MarginContainer/VBoxContainer/HBoxContainer/URL.text
