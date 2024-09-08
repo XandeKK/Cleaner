@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, request, jsonify, send_file
 from flask_socketio import SocketIO, emit
 from werkzeug.utils import secure_filename
@@ -14,6 +15,10 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+def wait_for_file(file_path, check_interval=5):
+    while not os.path.exists(file_path):
+        time.sleep(check_interval)
+
 @socketio.on('panel_cleaner')
 def handle_panel_cleaner(data):
     if os.path.exists('cleaner'):
@@ -22,7 +27,11 @@ def handle_panel_cleaner(data):
     os.makedirs('cleaner/raw')
     os.makedirs('cleaner/mask')
 
-    with zipfile.ZipFile('/content/drive/MyDrive/raw.zip', 'r') as zip_ref:
+    raw_zip_path = '/content/drive/MyDrive/raw.zip'
+
+    wait_for_file(raw_zip_path)
+
+    with zipfile.ZipFile(raw_zip_path, 'r') as zip_ref:
         zip_ref.extractall('cleaner/raw')
 
     t = threading.Thread(target=PanelCleaner.process_files, args=(socketio,))
@@ -31,12 +40,20 @@ def handle_panel_cleaner(data):
 
 @socketio.on('redraw')
 def redraw():
-    with zipfile.ZipFile('/content/drive/MyDrive/mask.zip', 'r') as zip_ref:
+    mask_zip_path = '/content/drive/MyDrive/mask.zip'
+
+    wait_for_file(mask_zip_path)
+
+    with zipfile.ZipFile(mask_zip_path, 'r') as zip_ref:
         zip_ref.extractall('cleaner/mask')
 
     t = threading.Thread(target=Iopaint.inpainting, args=(socketio,))
     t.start()
     socketio.emit('log', {'message': 'Redraw started.'})
+
+@socketio.on('ping')
+def ping():
+    socketio.emit('ping', {'message': 'pong.'})
 
 if __name__ == "__main__":
     socketio.run(app)
