@@ -78,4 +78,4 @@ func _on_save_pressed():
 	Notification.message("Mask saved")
 
 func _on_timer_timeout():
-	Client.client.socketio_send("ping", {})
+	Client.client.socketio_send("ping")
